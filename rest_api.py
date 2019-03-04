@@ -8,7 +8,7 @@ from flask_httpauth import HTTPBasicAuth
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///revolutTask.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
 db = SQLAlchemy(app)
 api = Api(app)
