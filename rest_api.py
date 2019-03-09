@@ -1,14 +1,23 @@
+# This scirpt builds a simple RESTful API service using Flask- a micro web framework
+# with basic auth
+
+
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
 from flask_httpauth import HTTPBasicAuth
+import warnings
 
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", UserWarning)
+    from flask_marshmallow import Marshmallow
 
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 api = Api(app)
@@ -40,9 +49,10 @@ class DbTable(db.Model):
 		self.amount = amount
 
 
+# 
 schema = db_schema(strict=True)
 schemas = db_schema(many=True, strict=True)
-
+db.create_all()
 
 @auth.verify_password
 def authentication(username, password):
@@ -80,8 +90,21 @@ class GetPost(Resource):
 		return schema.jsonify(new_data_entry)
 		
 
+class GetOne(Resource):
+	# Method GET for single data
+	# Require login: Basic Auth
+
+	# Get single record
+	@auth.login_required
+	def get(self, num):
+		fetch_data = DbTable.query.get(num)
+		json_output = schema.dump(fetch_data)
+		return json_output
+
 
 class Update(Resource):
+	# Method put
+
 	@auth.login_required
 	def put(self, num):
 		put_data =  DbTable.query.get(num)
@@ -117,6 +140,7 @@ class Delete(Resource):
 
 
 api.add_resource(GetPost, '/api')
+api.add_resource(GetOne, '/api/id/<int:num>')
 api.add_resource(Update, '/update/id/<int:num>')
 api.add_resource(Delete, '/delete/id/<int:num>')
 
@@ -124,9 +148,6 @@ api.add_resource(Delete, '/delete/id/<int:num>')
 # fire up the Server
 if __name__ == '__main__':
 	app.run(debug=True)
-
-
-
 
 
 
